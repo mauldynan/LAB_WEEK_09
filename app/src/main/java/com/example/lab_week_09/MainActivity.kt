@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,6 +12,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -25,6 +27,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.lab_week_09.ui.theme.LAB_WEEK_09Theme
 import com.example.lab_week_09.ui.theme.OnBackgroundItemText
 import com.example.lab_week_09.ui.theme.OnBackgroundTitleText
@@ -39,7 +47,8 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    Home()
+                    val navController = rememberNavController()
+                    App(navController = navController)
                 }
             }
         }
@@ -47,7 +56,33 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun Home() {
+fun App(navController: NavHostController) {
+    NavHost(
+        navController = navController,
+        startDestination = "home"
+    ) {
+        composable("home") {
+            Home { listData ->
+                navController.navigate("resultContent/?listData=$listData")
+            }
+        }
+        composable(
+            "resultContent/?listData={listData}",
+            arguments = listOf(navArgument("listData") {
+                type = NavType.StringType
+            })
+        ) {
+            ResultContent(
+                it.arguments?.getString("listData").orEmpty()
+            )
+        }
+    }
+}
+
+@Composable
+fun Home(
+    navigateFromHomeToResult: (String) -> Unit
+) {
     val listData = remember {
         mutableStateListOf(
             Student("Tanu"),
@@ -66,9 +101,12 @@ fun Home() {
         },
         onButtonClick = {
             if (inputField.name.isNotBlank()) {
-                listData.add(inputField)
+                listData.add(inputField.copy())
                 inputField = Student("")
             }
+        },
+        navigateFromHomeToResult = {
+            navigateFromHomeToResult(listData.joinToString { it.name })
         }
     )
 }
@@ -78,24 +116,34 @@ fun HomeContent(
     listData: SnapshotStateList<Student>,
     inputField: Student,
     onInputValueChange: (String) -> Unit,
-    onButtonClick: () -> Unit
+    onButtonClick: () -> Unit,
+    navigateFromHomeToResult: () -> Unit
 ) {
     Column(
-        modifier = Modifier.padding(16.dp).fillMaxSize(),
+        modifier = Modifier
+            .padding(16.dp)
+            .fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         OnBackgroundTitleText(text = stringResource(id = R.string.enter_item))
 
         TextField(
             value = inputField.name,
+            label = { Text(stringResource(id = R.string.enter_item)) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
             onValueChange = onInputValueChange
         )
 
-        PrimaryTextButton(
-            text = stringResource(id = R.string.button_click),
-            onClick = onButtonClick
-        )
+        Row(modifier = Modifier.padding(top = 16.dp)) {
+            PrimaryTextButton(
+                text = stringResource(id = R.string.button_click),
+                onClick = onButtonClick
+            )
+            PrimaryTextButton(
+                text = stringResource(id = R.string.button_finish),
+                onClick = navigateFromHomeToResult
+            )
+        }
 
         LazyColumn(
             modifier = Modifier
@@ -118,11 +166,49 @@ fun HomeContent(
     }
 }
 
+
+@Composable
+fun ResultContent(listData: String) {
+    val names = listData.split(",").map { it.trim() }.filter { it.isNotBlank() }
+
+    Column(
+        modifier = Modifier
+            .padding(16.dp)
+            .fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        OnBackgroundTitleText(text = stringResource(id = R.string.result_title))
+
+        OnBackgroundItemText(text = "[${names.joinToString { "Student(name=$it)" }}]")
+
+        /*
+        LazyColumn(
+            modifier = Modifier
+                .padding(top = 16.dp)
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            items(names) { name ->
+                Column(
+                    modifier = Modifier
+                        .padding(vertical = 4.dp)
+                        .fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    OnBackgroundItemText(text = name)
+                }
+            }
+        }
+        */
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun PreviewHome() {
     LAB_WEEK_09Theme {
-        Home()
+        val navController = rememberNavController()
+        App(navController = navController)
     }
 }
 
