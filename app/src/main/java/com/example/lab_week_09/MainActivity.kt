@@ -106,7 +106,7 @@ fun Home(
             }
         },
         navigateFromHomeToResult = {
-            navigateFromHomeToResult(listData.joinToString { it.name })
+            navigateFromHomeToResult(listData.filter { it.name.isNotBlank() }.joinToString { it.name })
         }
     )
 }
@@ -152,7 +152,7 @@ fun HomeContent(
                 .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            items(listData) { item ->
+            items(listData.filter { it.name.isNotBlank() }) { item ->
                 Column(
                     modifier = Modifier
                         .padding(vertical = 4.dp)
@@ -165,7 +165,6 @@ fun HomeContent(
         }
     }
 }
-
 
 @Composable
 fun ResultContent(listData: String) {
@@ -180,26 +179,6 @@ fun ResultContent(listData: String) {
         OnBackgroundTitleText(text = stringResource(id = R.string.result_title))
 
         OnBackgroundItemText(text = "[${names.joinToString { "Student(name=$it)" }}]")
-
-        /*
-        LazyColumn(
-            modifier = Modifier
-                .padding(top = 16.dp)
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            items(names) { name ->
-                Column(
-                    modifier = Modifier
-                        .padding(vertical = 4.dp)
-                        .fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    OnBackgroundItemText(text = name)
-                }
-            }
-        }
-        */
     }
 }
 
